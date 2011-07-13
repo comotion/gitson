@@ -31,7 +31,7 @@ run_command () {
 }
 
 startdir=$(pwd)
-scriptdir=$(dirname $(readlink -f $0))
+scriptdir=$(dirname $0)
 user=$(stat -c "%U" "$scriptdir/data.cdb")
 
 if [ "$user" != "$USER" ] ; then
