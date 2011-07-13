@@ -31,28 +31,29 @@ run_command () {
 }
 
 startdir=$(pwd)
-scriptdir=$(dirname $0)
-user=$(stat -c "%U" "$scriptdir/data.cdb")
+scriptdir=$(dirname $(readlink $0))
+user=$(stat -c "%U" "$startdir/data.cdb")
 
 if [ "$user" != "$USER" ] ; then
   echo "Run me as $user, please."
   exit 1
 fi
 
-cd $scriptdir
+cd $startdir
 
 # git config, motherfucker
 #git config --global user.name penis
 #git config --global user.email penis
 # who gives a fucking shit ass vagina
 VALIDZONES=""
-for i in `find $ZONES -type d `
+for i in `find $ZONES -mindepth 1 -type d | grep -v '/\.'`
 do
+  #echo "zone: $i"
   # zones are dirs containing my.domain.org files
-  if [ -d $i/.git ]; then
+  if [ "$1" != "nopull" -a -d $i/.git ]; then
     cd $i
     run_command git pull 
-    cd $scriptdir
+    cd $startdir
   fi
   for domainfile in `find $i -type f | grep -v '/\.'`
   do
@@ -101,9 +102,8 @@ do
 done
 
 #echo $VALIDZONES
-
 echo -n > data
-cat $VALIDZONES >> data
+[ -n "$VALIDZONES" ] && cat $VALIDZONES >> data || echo "NO VALID ZONES" >&2
 
 run_command /usr/local/bin/tinydns-data
 
