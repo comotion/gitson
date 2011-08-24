@@ -31,7 +31,7 @@ run_command () {
 }
 
 startdir=$(pwd)
-scriptdir=$(dirname $(readlink $0))
+scriptdir=$(dirname $0)
 user=$(stat -c "%U" "$startdir/data.cdb")
 
 if [ "$user" != "$USER" ] ; then
@@ -44,7 +44,6 @@ cd $startdir
 # git config, motherfucker
 #git config --global user.name penis
 #git config --global user.email penis
-# who gives a fucking shit ass vagina
 VALIDZONES=""
 for i in `find $ZONES -mindepth 1 -type d | grep -v '/\.'`
 do
@@ -71,12 +70,12 @@ do
           then
           REVERSE=`echo $LINE | sed 's/^.//' | cut -f 2 -d : | sed 's/\.$//'`
           #echo "REVERSE $DOMAIN $REVERSE"
-          if ! echo "$REVERSE" | grep -q "$domain$"
-            then
-            # not really validation of IP domain control
-            echo "$REVERSE delegated outside of $domain"
-            NVALID="$NVALID $REVERSE"
-          fi
+          #if ! echo "$REVERSE" | grep -q "$domain$"
+          #  then
+          #  # not really validation of IP domain control
+          #  echo "$REVERSE delegated outside of $domain"
+          #  NVALID="$NVALID $REVERSE"
+          #fi
         else
           echo "$DOMAIN should not be in $domain" >&2
           NVALID="$NVALID $DOMAIN"
