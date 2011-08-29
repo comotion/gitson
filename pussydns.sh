@@ -48,6 +48,7 @@ cd $startdir
 #git config --global user.name penis
 #git config --global user.email penis
 VALIDZONES=""
+CHANGES=
 for i in `find $ZONES -mindepth 1 -type d | grep -v '/\.'`
 do
   #echo "zone: $i"
@@ -99,12 +100,18 @@ do
 
       VALIDZONES="$VALIDZONES $domainfile"
     fi
+    if [ $domainfile -nt $startdir/data ]
+       then
+       CHANGES="$domainfile $CHANGES"
+    fi
   done
        
 done
 
+[ -z "$CHANGES" ] &&  exit 0 # nothing new, no change
 #echo $VALIDZONES
 echo -n > data
+
 [ -n "$VALIDZONES" ] && cat $VALIDZONES >> data || echo "NO VALID ZONES" >&2
 
 run_command /usr/local/bin/tinydns-data
