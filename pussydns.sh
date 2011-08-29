@@ -5,10 +5,11 @@
 #  * run tinydns-data
 #
 #  * some sort of validation - check
-#    * ensure that files only contain domains matching filename - check
+#  * ensure that files only contain domains matching filename - check
+#  * deal with data timestamps so we don't update needlessly - check
 #  TODO
-#    * accept new domains, but not duplicates
-#    * deal with data.cdb timestamps so we don't update needlessly
+#    * accept new (sub)domains, but not duplicates. oldest wins
+#    * reject lines, not whole domain files
 #
 # krav/comotion 2011-06-02
 
@@ -78,7 +79,7 @@ do
           if [ -n "$VALREV" ] && ! echo "$REVERSE" | grep -q "$domain$"
             then
             # not really validation of IP domain control
-            echo "$REVERSE delegated outside of $domain"
+            echo "$REVERSE delegated outside of $domain" >&2
             NVALID="$NVALID $REVERSE"
           fi
         else
@@ -110,7 +111,7 @@ do
 done
 
 [ -z "$CHANGES" ] && touch data data.old && exit 0 # nothing new, no change
-[ -z "$QUIET" ] && echo $CHANGES 2>&1              # log changes to cronmail
+[ -z "$QUIET" ] && echo $CHANGES >&2              # log changes to cronmail
 #echo $VALIDZONES
 mv data data.old # [ -f data.old ] && [ data -nt data.old ] && svc -t /service/tinydns6 ||:
 echo -n > data
