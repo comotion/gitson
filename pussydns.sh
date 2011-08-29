@@ -34,6 +34,7 @@ run_command () {
 
 startdir=$(pwd)
 scriptdir=$(dirname $0)
+startdir=$scriptdir/..
 user=$(stat -c "%U" "$startdir/data.cdb")
 
 if [ "$user" != "$USER" ] ; then
@@ -41,8 +42,11 @@ if [ "$user" != "$USER" ] ; then
   exit 1
 fi
 
-cd $startdir
+cd $startdir 
 
+# GIT Config, motherfucker
+#git config --global user.name penis
+#git config --global user.email penis
 VALIDZONES=""
 for i in `find $ZONES -mindepth 1 -type d | grep -v '/\.'`
 do
