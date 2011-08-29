@@ -32,17 +32,18 @@ run_command () {
   fi
 }
 
-startdir=$(pwd)
 scriptdir=$(dirname $0)
-startdir=$scriptdir/..
+cd $scriptdir/..
+startdir=$PWD
+cd $startdir 
+
 user=$(stat -c "%U" "$startdir/data.cdb")
 
-if [ "` id -u $user`" != "$UID" ] ; then
+if [ "`id -u $user`" != "`id -u`" ] ; then
   echo "Run me as $user, please."
   exit 1
 fi
 
-cd $startdir 
 
 # GIT Config, motherfucker
 #git config --global user.name penis
@@ -108,8 +109,10 @@ do
        
 done
 
-[ -z "$CHANGES" ] &&  exit 0 # nothing new, no change
+[ -z "$CHANGES" ] && touch data data.old && exit 0 # nothing new, no change
+[ -z "$QUIET" ] && echo $CHANGES 2>&1              # log changes to cronmail
 #echo $VALIDZONES
+mv data data.old # [ -f data.old ] && [ data -nt data.old ] && svc -t /service/tinydns6 ||:
 echo -n > data
 
 [ -n "$VALIDZONES" ] && cat $VALIDZONES >> data || echo "NO VALID ZONES" >&2
