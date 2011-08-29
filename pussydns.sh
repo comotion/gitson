@@ -37,7 +37,7 @@ scriptdir=$(dirname $0)
 startdir=$scriptdir/..
 user=$(stat -c "%U" "$startdir/data.cdb")
 
-if [ "$user" != "$USER" ] ; then
+if [ "` id -u $user`" != "$UID" ] ; then
   echo "Run me as $user, please."
   exit 1
 fi
