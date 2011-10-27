@@ -1,0 +1,21 @@
+all: pussy
+# if you want to do ipv6 and there targets as well, replace above with:
+#all: pussy six there
+
+pussy:
+	@./pussydns/pussydns.sh
+
+data: pussy
+data.cdb: data
+	/usr/local/bin/tinydns-data
+
+# target for pushing config to another host,  but only if it changed
+there: pussy
+	@[ -f data.old ] && [ data -nt data.old ] && ssh -i dnsync_id_dsa dnsadmin@another.host.info make ||:
+
+# target for updating ipv6 server, if running a separate ip6 instance of tinyDNS.
+six: pussy
+	@[ -f data.old ] && [ data -nt data.old ] && svc -t /service/tinydns6 ||:
+
+.PHONY: there six pussy
+
