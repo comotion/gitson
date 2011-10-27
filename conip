@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# find my connection ip address
+# check host key
+# update ip address in TinyDNS
+
+# assumptions: 
+#  client is ssh'ing in with -R$myport:localhost:22
+#  client is running ssh
+#  client username is the (sub)domain name to be updated
+
+# installation:
+#  server ssh configured to run this command then disconnect
+#   - chrooted even. 
+# -how does this fit into pussydns?
+# --> conip > /dns/(sub)domain.tld file
+# --> git diff && git commit -am $message && git push
+#  
+# TODO: 
+#  * actually integrate with pussydns instead of just printing shit
+#  * a user-to-domain map or
+#  * a better way to select the domain part
+#  * could be used for web updates too
+#
+# comotion@krutt.org 2011-10-26
+
+myport=22123
+ttl=300
+domain=
+
+u=`whoami`$domain
+
+## this part strait from add-sshfp
+# convert decimal to octal
+dec2oct() {
+       echo "ibase=10; obase=8; $1" | bc -l
+}
+
+# convert hex to octal
+hex2oct() {
+       # bc wants uppercase hex
+       local i=$(echo "$1" | tr [a-f] [A-F])
+       echo "ibase=16; obase=8; $i" | bc -l
+}
+
+fp2oct() {
+   hostalias=$1
+   fpfile=$2
+   ssh-keygen -f $fpfile -r $hostalias | \
+   while read host in sshfp alg fptype fp; do
+          out="\\"$(printf "%03d" $(dec2oct $alg))
+          out=$out"\\"$(printf "%03d" $(dec2oct $fptype))
+
+          while [ "$fp" ]; do
+                  # temp chop off two bytes
+                  t=${fp#??}
+                  # take the bytes
+                  ch=${fp%$t}
+                  out=$out"\\"$(printf "%03d" $(hex2oct $ch))
+                  # continue fp
+                  fp=$t
+          done
+          printf ":%s:44:%s:\n" $host $out
+   done
+}
+
+## end add-sshfp
+
+
+#ip=$(last -2i $u | head -n1 |  awk '{ print $3 }')
+
+# safer to look at actual connection
+ip=$( echo $SSH_CONNECTION | cut -d' ' -f1)
+
+# the ip and fingerprint as DNS sees it
+dnsip=$(nslookup $u | tail -n2 |  awk '/Address:/ { print $2 }' )
+dnsfp=$(nslookup -querytype=sshfp $u | awk '/rdata_44 =/ { print $6 }')
+
+# to check hostkey of connecting system we need to connect back
+# usually, you'll be NAT'ed and therefore we'll have to assume you RemoteForward
+tmp=`tempfile`
+ssh-keyscan -p $myport localhost | sed 's/^[^ ]* //' > $tmp 2>&1
+fp=$(ssh-keygen -l -f $tmp | cut -f 2 -d ' ')
+sshver=$(head -n1 $tmp | cut -f 3 -d ' ')
+
+echo "# $u $ip $fp $sshver"
+echo "# $u $dnsip $dnsfp"
+# generate fp and host entries and replace the old ones
+# but only if fingerprint doesn't exist or matches old one
+if [ -n "$fp" ] && [ "$fp" != "$dnsfp" ]
+   then
+   # prevents some bad shit.. but at this point you're fucked anyway
+   echo "$u fingerprint doesn't match the one in DNS"
+   # unless you reinstalled, in which case your old FP needs to be deleted from DNS
+   exit 1
+fi
+if echo $ip | grep -q :
+   then
+   # connecting over ip6. should we delete ip4 record?
+   echo 6:$u:$(echo $ip | sed 's/://g')
+else
+   echo =$u:$ip:$ttl
+fi
+
+[ -n "$fp"] && fp2oct $u $tmp
+
+rm $tmp
+
