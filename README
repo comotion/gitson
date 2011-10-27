@@ -101,3 +101,12 @@ Quick install
 5. check that everything works by running /pussydns/pussydns.sh in /etc/dns
 6. cp pussydns.cron /etc/cron.d # to periodically sync and validate repos
 
+
+Additional features
+===================
+
+conip
+-----
+
+conip is a script to update DNS records with ssh clients. it is still work in progress
+
