@@ -50,7 +50,8 @@ for this ridiculous format, which usually is about as large as the rest of the
 server. Only exception is BIND itself, which somehow manages to be ten times 
 larger than its parser.
 
-Furthermore, we really don't like putting our DNS records in SQL.
+Furthermore, we really don't like putting our DNS records in SQL, 
+despite the fact that Maintain, NicTool and Sauron may be perfectly decent programs.
 
 So, we base ourselves on git and TinyDNS, and we write a script to validate
 domain records before turning them /live/ on our server.
@@ -110,3 +111,7 @@ conip
 
 conip is a script to update DNS records with ssh clients. it is still work in progress
 
+legend
+------
+
+just an example zone file for use with TinyDNS
