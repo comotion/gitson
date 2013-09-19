@@ -1,0 +1,34 @@
+#!/bin/sh
+## this part strait from add-sshfp
+# convert decimal to octal
+dec2oct() {
+       echo "ibase=10; obase=8; $1" | bc -l
+}
+
+# convert hex to octal
+hex2oct() {
+       # bc wants uppercase hex
+       local i=$(echo "$1" | tr [a-f] [A-F])
+       echo "ibase=16; obase=8; $i" | bc -l
+}
+
+fp2djb() {
+   while read host in sshfp alg fptype fp; do
+          out="\\"$(printf "%03d" $(dec2oct $alg))
+          out=$out"\\"$(printf "%03d" $(dec2oct $fptype))
+
+          while [ "$fp" ]; do
+                  # temp chop off two bytes
+                  t=${fp#??}
+                  # take the bytes
+                  ch=${fp%$t}
+                  out=$out"\\"$(printf "%03d" $(hex2oct $ch))
+                  # continue fp
+                  fp=$t
+          done
+          printf ":%s:44:%s:\n" $host $out
+   done
+}
+
+fp2djb
+
