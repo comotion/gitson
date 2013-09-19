@@ -1,13 +1,23 @@
 #!/bin/bash
+# dyndnssh.sh
+# sshdyndns.sh
+# dyn-ssh.sh  dynamic.sh
+# Secure dynamic DNS update, very much unlike nsupdate.
+# Replace your dyndns scripts too.
 
-# find my connection ip address
-# check host key
-# update ip address in TinyDNS
-
+# Scope is just update A or AAAA records over SSH.
+# The domains to update is decided by matching SSH host key.
+#
 # assumptions: 
 #  client is ssh'ing in with -R$myport:localhost:22
 #  client is running ssh
 #  client username is the (sub)domain name to be updated
+
+# method:
+#  check host key
+#  find my connection ip address
+#  update ip address in TinyDNS
+
 
 # installation:
 #  server ssh configured to run this command then disconnect
@@ -18,17 +28,15 @@
 #  
 # TODO: 
 #  * actually integrate with pussydns instead of just printing shit
-#  * a user-to-domain map or
-#  * a better way to select the domain part
 #  * could be used for web updates too
 #
 # comotion@krutt.org 2011-10-26
 
-myport=22123
-ttl=300
-domain=
-
-u=`whoami`$domain
+ZONES=/etc/dns/zones/
+MYPORT=22123
+TTL=300
+DOMAIN_CHANGED=0
+DOMAIN_FOUND=0
 
 ## this part strait from add-sshfp
 # convert decimal to octal
@@ -43,6 +51,7 @@ hex2oct() {
        echo "ibase=16; obase=8; $i" | bc -l
 }
 
+# this is lame slow..
 fp2oct() {
    hostalias=$1
    fpfile=$2
@@ -67,42 +76,92 @@ fp2oct() {
 ## end add-sshfp
 
 
-#ip=$(last -2i $u | head -n1 |  awk '{ print $3 }')
-
-# safer to look at actual connection
-ip=$( echo $SSH_CONNECTION | cut -d' ' -f1)
-
-# the ip and fingerprint as DNS sees it
-dnsip=$(nslookup $u | tail -n2 |  awk '/Address:/ { print $2 }' )
-dnsfp=$(nslookup -querytype=sshfp $u | awk '/rdata_44 =/ { print $6 }')
+fpfail () {
+   echo "Couldn't verify your SSH hostkey, did you remember to forward the ssh port?" >&2
+   echo "  hint: ssh -R$MYPORT:localhost:22 $USER@`hostname -f`" >&2
+   exit 1
+}
 
 # to check hostkey of connecting system we need to connect back
 # usually, you'll be NAT'ed and therefore we'll have to assume you RemoteForward
-tmp=`tempfile`
-ssh-keyscan -p $myport localhost | sed 's/^[^ ]* //' > $tmp 2>&1
-fp=$(ssh-keygen -l -f $tmp | cut -f 2 -d ' ')
-sshver=$(head -n1 $tmp | cut -f 3 -d ' ')
+#
+# then do some conversion of the key fingerprint and look for this key 
+# among all the managed domains
+hostkey () {
+   ssh-keyscan -p $MYPORT -t ecdsa,dsa,rsa localhost 2>&1 | grep -v 'no hostkey alg' |
+   #ok, now we have one or more sshfp, we can grep for it in the zonefile..
+   # format difference between ssh-keygen -r and ssh-keyscan. FML
+   sed -e 's/localhost //' -e 's/$/ localhost/' 
+}
 
-echo "# $u $ip $fp $sshver"
-echo "# $u $dnsip $dnsfp"
-# generate fp and host entries and replace the old ones
-# but only if fingerprint doesn't exist or matches old one
-if [ -n "$fp" ] && [ "$fp" != "$dnsfp" ]
-   then
-   # prevents some bad shit.. but at this point you're fucked anyway
-   echo "$u fingerprint doesn't match the one in DNS"
-   # unless you reinstalled, in which case your old FP needs to be deleted from DNS
-   exit 1
-fi
+fingerprint () {
+   # split up keys because ssh-keygen is dumb and only handles one key
+   tmp=`tempfile`
+   grep -v '^#' | while read key
+   do
+      echo "$key" > $tmp
+      # slow as a dog
+      fp2oct localhost $tmp | sed 's/:localhost//'
+   done
+   rm $tmp
+}
+
+findfp () {
+   fpstring="$1"
+   # not terribly efficient either
+   grep -Gr "$(echo "$fpstring" | sed 's/\\/\\\\/g')" $ZONES
+}
+
+update_domain () {
+   echo $domain changed to $ip
+   echo $thing$domain:$ip:$TTL
+   # cat/sed into file
+   # commit, push
+}
+
+# now find the ip address
+#ip=$(last -2i $u | head -n1 |  awk '{ print $3 }')
+# safer to look at actual connection
+ip=$( echo $SSH_CONNECTION | cut -d' ' -f1)
+# is thing ip6 or ip4?
+thing='='
 if echo $ip | grep -q :
-   then
-   # connecting over ip6. should we delete ip4 record?
-   echo 6:$u:$(echo $ip | sed 's/://g')
-else
-   echo =$u:$ip:$ttl
+then
+  thing='6'
+  ip=$(echo $ip | sed 's/://g')
 fi
 
-[ -n "$fp"] && fp2oct $u $tmp
+unique_domains_only () {
+   cut -d: -f 1,3 | sort | uniq | sed 's/:/ /g' 
+}
 
-rm $tmp
+matchip () {
+   while read file domain
+   do
+      DOMAIN_FOUND=1
+      if [ "`grep -I ^$thing$domain $file | cut -d: -f2`" = "$ip" ]
+      then
+         :
+         echo IP matches, no change.
+      else
+         DOMAIN_CHANGED=1
+         update_domain $thing $domain $ip $TTL
+      fi
+   done
+   return $(($DOMAIN_FOUND + $DOMAIN_CHANGED))
+}
+# check if i p
+findfp `hostkey | fingerprint` | unique_domains_only | matchip 
+DOMAIN_FOUND=$?
+
+if [ ! $DOMAIN_FOUND ]
+then
+   echo failed to find domain to update
+   exit
+fi
+  
+# the ip and fingerprint as DNS sees it
+#dnsip=$(nslookup $u | tail -n2 |  awk '/Address:/ { print $2 }' )
+#dnsfp=$(nslookup -querytype=sshfp $u | awk '/rdata_44 =/ { print $6 }')
+
 
