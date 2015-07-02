@@ -1,14 +1,12 @@
            ============
-             PussyDNS
+             Gitson
            ============
-
-by krav and comotion, Fall 2011.
 
 Ultralite distributed DNS syndication.
 
-PussyDNS sprung from the wish to have a resilient and scalable DNS infrastructure.
+Gitson sprung from the wish to have a resilient and scalable DNS infrastructure.
 
-What is PussyDNS?
+What is Gitson?
 =================
 
 In a few words, it is TinyDNS with domain records managed in git repos,
@@ -73,13 +71,13 @@ for instance, you would create a foo.no repo and host it on your server,
    and I would create a hackeriet.org repo and host it on my server.
 
 Then we clone each others' domain repos and pull them periodically,
-validating them with pussydns before 
+validating them with gitson before 
 
 For our scripts to work, your TinyDNS root should be symlinked to
 /etc/dns
 
-PussyDNS should be in
-/etc/dns/pussydns
+Gitson should be in
+/etc/dns/gitson/
 
 and all domain record repos should be cloned into
 
@@ -97,10 +95,10 @@ Quick install
    These scripts will configure up-to-date, patched versions of the software!
 
 2. create git repos for your domain records
-3. git clone git://github.com/comotion/pussydns /etc/pussydns
+3. git clone git://github.com/comotion/gitson /etc/gitson
 4. clone your and my domain git repos into /etc/dns/zones/<repo>
-5. check that everything works by running /pussydns/pussydns.sh in /etc/dns
-6. cp pussydns.cron /etc/cron.d # to periodically sync and validate repos
+5. check that everything works by running /gitson/gitson in /etc/dns
+6. cp gitson.cron /etc/cron.d/gitson # to periodically sync and validate repos
 
 
 Additional features
@@ -115,3 +113,9 @@ legend
 ------
 
 just an example zone file for use with TinyDNS
+
+Credits
+=======
+
+Gitson by krav and comotion, Fall 2011.
+Renamed to Gitson, July 2015

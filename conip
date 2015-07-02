@@ -22,12 +22,12 @@
 # installation:
 #  server ssh configured to run this command then disconnect
 #   - chrooted even. 
-# -how does this fit into pussydns?
+# -how does this fit into gitson?
 # --> conip > /dns/(sub)domain.tld file
 # --> git diff && git commit -am $message && git push
 #  
 # TODO: 
-#  * actually integrate with pussydns instead of just printing shit
+#  * actually integrate with gitson instead of just printing shit
 #  * could be used for web updates too
 #
 # comotion@krutt.org 2011-10-26
