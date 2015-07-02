@@ -5,12 +5,30 @@
 Ultralite distributed DNS syndication.
 
 Gitson sprung from the wish to have a resilient and scalable DNS infrastructure.
+Released under the Affero GNU Public License.
 
 What is Gitson?
 =================
 
-In a few words, it is TinyDNS with domain records managed in git repos,
+Gitson is a DNS server with domain records managed in git repos,
 supervised by a shell script that validates said records.
+
+Quick install
+=============
+
+1. install and set up daemontools, ucscpi-tcp and tinydns. 
+   The best way to do it is through running the following scripts:
+   https://github.com/comotion/gone/blob/HEAD/modules/daemontools
+   https://github.com/comotion/gone/blob/HEAD/modules/ucspi
+   https://github.com/comotion/gone/blob/HEAD/modules/tinydns
+
+   These scripts will configure up-to-date, patched versions of the software!
+
+2. create git repos for your domain records
+3. git clone git://github.com/comotion/gitson /etc/gitson
+4. clone your and my domain git repos into /etc/dns/zones/<repo>
+5. check that everything works by running /gitson/gitson in /etc/dns
+6. cp gitson.cron /etc/cron.d/gitson # to periodically sync and validate repos
 
 Motivation
 ==========
@@ -54,16 +72,16 @@ despite the fact that Maintain, NicTool and Sauron may be perfectly decent progr
 So, we base ourselves on git and TinyDNS, and we write a script to validate
 domain records before turning them /live/ on our server.
 
-Installation
+How it works
 ============
 
-So, you and I both set up TinyDNS.
-Yes it's old school, but we've patched and batched it,
+First, you and I both set up our DNS software, and to make it easy to interoperate
+we both use TinyDNS. Yes, TinyDNS  is old school, but we've patched and batched it,
 see https://github.com/comotion/gone/blob/HEAD/modules/tinydns
 for a one-liner installation procedure.
 
-Once we have running TinyDNS servers,
-we both create git repos containing our TinyDNS zones. Each git repo is
+Once we have running DNS servers,
+we both create git repos containing our DNS zones. Each git repo
 contains (sub)domains that a particular group of people have access to.
 
 The origin git repo is hosted by whoever is authorative for those zones,
@@ -83,24 +101,6 @@ and all domain record repos should be cloned into
 
 /etc/dns/zones/<repo>
 
-Quick install
-=============
-
-1. install and set up daemontools, ucscpi-tcp and tinydns. 
-   The best way to do it is through running the following scripts:
-   https://github.com/comotion/gone/blob/HEAD/modules/daemontools
-   https://github.com/comotion/gone/blob/HEAD/modules/ucspi
-   https://github.com/comotion/gone/blob/HEAD/modules/tinydns
-
-   These scripts will configure up-to-date, patched versions of the software!
-
-2. create git repos for your domain records
-3. git clone git://github.com/comotion/gitson /etc/gitson
-4. clone your and my domain git repos into /etc/dns/zones/<repo>
-5. check that everything works by running /gitson/gitson in /etc/dns
-6. cp gitson.cron /etc/cron.d/gitson # to periodically sync and validate repos
-
-
 Additional features
 ===================
 
@@ -108,6 +108,11 @@ conip
 -----
 
 conip is a script to update DNS records with ssh clients. it is still work in progress
+
+fp2djb
+------
+
+convert ssh fingerprints to tinydns records.
 
 legend
 ------
